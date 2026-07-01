@@ -1,0 +1,301 @@
+---
+title: "Exploring the BRFSS data"
+output: 
+  html_document: 
+    fig_height: 4
+    highlight: pygments
+    theme: spacelab
+---
+
+## Setup
+
+### Load packages
+
+```{r load-packages, message = FALSE}
+library(ggplot2)
+library(dplyr)
+```
+
+### Load data
+
+```{r load-data}
+load("brfss2013.RData")
+```
+
+
+
+* * *
+
+## Part 1: Data
+
+
+* * *
+
+## Part 2: Research questions
+
+**Research quesion 1:** How does self-reported general health differ between adults who did and did not exercise in the past 30 days, across BMI categories?
+
+**Research quesion 2:** Among U.S. adults, how does the number of days of poor mental health in the past 30 days differ by recent exercise status and sex?
+
+**Research quesion 3:** How does self-reported general health differ across household income categories among adults with and without health-care coverage?
+
+
+* * *
+
+## Part 3: Exploratory data analysis
+
+**Research quesion 1:** How does self-reported general health differ between adults who did and did not exercise in the past 30 days, across BMI categories?
+
+```{r}
+health_exercise <- brfss2013 %>%
+  select(exerany2, genhlth, X_bmi5cat) %>%
+  filter(
+    !is.na(exerany2),
+    !is.na(genhlth),
+    !is.na(X_bmi5cat)
+  ) %>%
+  mutate(
+    exercise = factor(exerany2, levels = c("Yes", "No")),
+    health = factor(
+      genhlth,
+      levels = c("Excellent", "Very good", "Good", "Fair", "Poor")
+    ),
+    bmi_category = factor(
+      X_bmi5cat,
+      levels = c("Underweight", "Normal weight", "Overweight", "Obese")
+    )
+  ) %>%
+  select(exercise, health, bmi_category)
+
+rq1_summary <- health_exercise %>%
+  count(bmi_category, exercise, health) %>%
+  group_by(bmi_category, exercise) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+rq1_summary
+
+ggplot(rq1_summary,
+       aes(x = exercise, y = proportion, fill = health)) +
+  geom_col() +
+  facet_wrap(~ bmi_category) +
+  labs(
+    title = "Self-reported general health by exercise status and BMI category",
+    x = "Exercise in the past 30 days",
+    y = "Proportion of respondents",
+    fill = "Self-reported general health"
+  )
+
+rq1_numerical_summary <- health_exercise %>%
+  group_by(bmi_category, exercise) %>%
+  summarise(
+    n = n(),
+    excellent_very_good_pct = round(
+      100 * mean(health %in% c("Excellent", "Very good")),
+      1
+    ),
+    good_pct = round(
+      100 * mean(health == "Good"),
+      1
+    ),
+    fair_poor_pct = round(
+      100 * mean(health %in% c("Fair", "Poor")),
+      1
+    ),
+    .groups = "drop"
+  )
+
+rq1_numerical_summary
+```
+
+The 2013 Behavioral Risk Factor Surveillance System (BRFSS) is a probability-based telephone survey of non-institutionalized U.S. adults aged 18 years and older. For this analysis, respondents with missing information on exercise, self-reported general health, or BMI category were excluded. The distribution of self-reported general health differed by both exercise status in the past 30 days and BMI category. Across all BMI categories, respondents who reported exercising had a higher proportion reporting Excellent or Very good health and a lower proportion reporting Fair or Poor health than those who did not exercise. For example, among respondents with normal weight, 67.4% of exercisers reported Excellent or Very good health, compared with 39.8% of non-exercisers. The obese group showed the least favorable health distribution overall: 40.1% of non-exercisers reported Fair or Poor health, compared with 21.4% of exercisers. These findings may be cautiously generalized to non-institutionalized U.S. adults, but potential bias may arise from nonresponse, telephone undercoverage, self-reported measures of exercise, health, height, and weight, and the exclusion of missing responses. As BRFSS is an observational survey without random assignment, the findings describe associations and do not establish that exercise causes better self-reported health.
+
+
+**Research quesion 2:** Among U.S. adults, how does the number of days of poor mental health in the past 30 days differ by recent exercise status and sex?
+
+```{r}
+grep("menthlth|sex", 
+     names(brfss2013), 
+     value = TRUE, 
+     ignore.case = TRUE)
+
+brfss2013 %>%
+  select(menthlth, exerany2, sex) %>%
+  summary()
+
+table(brfss2013$sex, useNA = "ifany")
+table(brfss2013$menthlth, useNA = "ifany")
+
+mental_health_exercise <- brfss2013 %>%
+  select(menthlth, exerany2, sex) %>%
+  filter(
+    !is.na(menthlth),
+    !is.na(exerany2),
+    !is.na(sex),
+    menthlth >= 0,
+    menthlth <= 30
+  ) %>%
+  mutate(
+    exercise = factor(exerany2, levels = c("Yes", "No")),
+    sex = factor(sex, levels = c("Male", "Female"))
+  ) %>%
+  select(menthlth, exercise, sex)
+
+summary(mental_health_exercise$menthlth)
+
+table(mental_health_exercise$sex)
+table(mental_health_exercise$exercise)
+
+rq2_summary <- mental_health_exercise %>%
+  group_by(sex, exercise) %>%
+  summarise(
+    n = n(),
+    median_days = median(menthlth),
+    iqr_days = IQR(menthlth),
+    mean_days = round(mean(menthlth), 1),
+    zero_days_pct = round(100 * mean(menthlth == 0), 1),
+    .groups = "drop"
+  )
+
+rq2_summary
+
+rq2_plot_data <- mental_health_exercise %>%
+  mutate(
+    mental_health_status = if_else(
+      menthlth == 0,
+      "0 poor mental health days",
+      "1–30 poor mental health days"
+    )
+  ) %>%
+  count(sex, exercise, mental_health_status) %>%
+  group_by(sex, exercise) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+ggplot(
+  rq2_plot_data,
+  aes(x = exercise, y = proportion, fill = mental_health_status)
+) +
+  geom_col() +
+  facet_wrap(~ sex) +
+  labs(
+    title = "Poor Mental Health Days by Exercise Status and Sex",
+    x = "Exercise in the Past 30 Days",
+    y = "Proportion of Respondents",
+    fill = "Poor Mental Health Days"
+  )
+```
+Respondents who reported exercising in the past 30 days were more likely to report zero poor mental health days than those who did not exercise, among both males and females. Female respondents had a lower proportion of zero poor mental health days than male respondents regardless of exercise status. The most favorable distribution was observed among male exercisers, whereas female non-exercisers had the highest proportion reporting one or more poor mental health days.
+
+
+**Research quesion 3:** How does self-reported general health differ across household income categories among adults with and without health-care coverage?
+
+```{r}
+grep("hlthpln|income|genhlth",
+     names(brfss2013),
+     value = TRUE,
+     ignore.case = TRUE)
+
+brfss2013 %>%
+  select(genhlth, hlthpln1, income2) %>%
+  summary()
+
+table(brfss2013$hlthpln1, useNA = "ifany")
+table(brfss2013$income2, useNA = "ifany")
+table(brfss2013$genhlth, useNA = "ifany")
+
+rq3_data <- brfss2013 %>%
+  select(genhlth, hlthpln1, income2) %>%
+  filter(
+    !is.na(genhlth),
+    !is.na(hlthpln1),
+    !is.na(income2)
+  ) %>%
+  mutate(
+    income_group = case_when(
+      income2 %in% c(
+        "Less than $10,000",
+        "Less than $15,000",
+        "Less than $20,000",
+        "Less than $25,000"
+      ) ~ "Less than $25,000",
+      
+      income2 %in% c(
+        "Less than $35,000",
+        "Less than $50,000",
+        "Less than $75,000"
+      ) ~ "$25,000 to less than $75,000",
+      
+      income2 == "$75,000 or more" ~ "$75,000 or more"
+    )
+  ) %>%
+  mutate(
+    health = factor(
+      genhlth,
+      levels = c("Excellent", "Very good", "Good", "Fair", "Poor")
+    ),
+    insurance = factor(
+      hlthpln1,
+      levels = c("Yes", "No")
+    ),
+    income_group = factor(
+      income_group,
+      levels = c(
+        "Less than $25,000",
+        "$25,000 to less than $75,000",
+        "$75,000 or more"
+      )
+    )
+  ) %>%
+  select(health, insurance, income_group)
+
+nrow(rq3_data)
+
+table(rq3_data$insurance)
+table(rq3_data$income_group)
+table(rq3_data$health)
+
+rq3_summary <- rq3_data %>%
+  group_by(insurance, income_group) %>%
+  summarise(
+    n = n(),
+    excellent_very_good_pct = round(
+      100 * mean(health %in% c("Excellent", "Very good")),
+      1
+    ),
+    good_pct = round(
+      100 * mean(health == "Good"),
+      1
+    ),
+    fair_poor_pct = round(
+      100 * mean(health %in% c("Fair", "Poor")),
+      1
+    ),
+    .groups = "drop"
+  )
+rq3_summary
+
+rq3_plot_data <- rq3_data %>%
+  count(insurance, income_group, health) %>%
+  group_by(insurance, income_group) %>%
+  mutate(proportion = n / sum(n)) %>%
+  ungroup()
+
+ggplot(
+  rq3_plot_data,
+  aes(x = income_group, y = proportion, fill = health)
+) +
+  geom_col() +
+  facet_wrap(~ insurance) +
+  labs(
+    title = "Self-Reported General Health by Income and Health-Care Coverage",
+    x = "Annual Household Income",
+    y = "Proportion of Respondents",
+    fill = "Self-Reported General Health"
+  ) +
+  theme(axis.text.x = element_text(angle = 20, hjust = 1))
+
+```
+Self-reported general health showed a clear income gradient within both health-care coverage groups. Among respondents with coverage, the proportion reporting Excellent or Very good health increased from 30.1% in the lowest income group to 70.5% in the highest income group, while the Fair or Poor proportion decreased from 37.4% to 5.9%. A similar pattern appeared among respondents without coverage: Excellent or Very good health increased from 33.5% to 63.9%, and Fair or Poor health decreased from 30.1% to 8.3% across the same income groups.
+
+The relationship between insurance coverage and self-reported health was not consistent within each income group. For example, low-income respondents without coverage reported a somewhat more favorable health distribution than low-income respondents with coverage. This pattern should not be interpreted as evidence that lacking coverage is beneficial; it may reflect differences in age, existing health needs, employment, or other unmeasured characteristics. In addition, the high-income uninsured group was relatively small (n = 2,758), so that comparison should be interpreted cautiously. Because BRFSS is observational, these findings describe associations rather than causal effects.
