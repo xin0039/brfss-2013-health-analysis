@@ -185,7 +185,79 @@ ggplot(
     fill = "Poor Mental Health Days"
   )
 ```
-Respondents who reported exercising in the past 30 days were more likely to report zero poor mental health days than those who did not exercise, among both males and females. Female respondents had a lower proportion of zero poor mental health days than male respondents regardless of exercise status. The most favorable distribution was observed among male exercisers, whereas female non-exercisers had the highest proportion reporting one or more poor mental health days.
+### Multiple Linear Regression
+```{r rq2-linear-regression}
+library(sandwich)
+library(lmtest)
+
+rq2_model <- lm(
+  menthlth ~ exercise + sex,
+  data = mental_health_exercise
+)
+summary(rq2_model)
+
+rq2_robust <- coeftest(
+  rq2_model,
+  vcov. = vcovHC(rq2_model, type = "HC3")
+)
+
+round(rq2_robust, 4)
+
+summary(rq2_model)$r.squared
+```
+### Regression Coefficient Plot
+
+```{r rq2-coefficient-plot}
+estimates <- coef(rq2_model)
+robust_se <- sqrt(diag(vcovHC(rq2_model, type = "HC3")))
+
+coef_data <- data.frame(
+  predictor = c(
+    "Exercise (Yes vs. No)",
+    "Sex (Female vs. Male)"
+  ),
+  estimate = unname(estimates[-1]),
+  se = unname(robust_se[-1])
+)
+
+coef_data$lower <- coef_data$estimate - 1.96 * coef_data$se
+coef_data$upper <- coef_data$estimate + 1.96 * coef_data$se
+
+rq2_coef_plot <- ggplot(
+  coef_data,
+  aes(x = estimate, y = predictor)
+) +
+  geom_vline(
+    xintercept = 0,
+    linetype = "dashed",
+    color = "grey50"
+  ) +
+  geom_pointrange(
+    aes(xmin = lower, xmax = upper),
+    color = "#286DA8",
+    linewidth = 0.7
+  ) +
+  labs(
+    title = "Exercise, Sex, and Poor Mental Health Days",
+    subtitle = "Linear regression coefficients with HC3 robust 95% CIs",
+    x = "Regression coefficient (days)",
+    y = NULL,
+    caption = "BRFSS 2013 | N = 450,071 | Unweighted exploratory analysis"
+  ) +
+  theme_minimal(base_size = 12)
+
+print(rq2_coef_plot)
+```
+Descriptive analysis showed that respondents reporting recent exercise were more likely to report zero poor mental health days than non-exercisers in both sex groups. Female respondents were less likely than male respondents to report zero poor mental health days, regardless of exercise status.
+
+To further examine these associations, a multiple linear regression was conducted with exercise status and sex as categorical predictors (N = 450,071). Heteroskedasticity-robust standard errors (HC3) were used to account for unequal error variances.
+
+Controlling for sex, respondents who reported recent exercise had, on average, 1.88 fewer poor mental health days than non-exercisers (β = −1.878, SE = 0.029, p < .001). Controlling for exercise status, female respondents reported approximately 0.96 more poor mental health days than male respondents (β = 0.959, SE = 0.023, p < .001).
+
+The model explained 1.62% of the variance in poor mental health days (R² = .0162), suggesting limited explanatory power.
+
+These findings describe associations rather than causal relationships. The model did not adjust for additional potential confounders or the complex BRFSS sampling design, and the outcome was highly concentrated at zero.
+
 
 
 **Research quesion 3:** How does self-reported general health differ across household income categories among adults with and without health-care coverage?
