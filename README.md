@@ -30,9 +30,30 @@ Across all BMI categories, respondents who exercised in the past 30 days had a h
 
 How does the number of poor mental health days in the past 30 days differ by recent exercise status and sex among U.S. adults?
 
+**Descriptive Analysis**
+
 ![RQ2: Poor mental health days by exercise status and sex](figures/rq2_mental_health_exercise_sex.png)
 
 The median number of poor mental health days was zero in all groups, so the proportion reporting zero poor mental health days provided a clearer comparison. Among males, 75.4% of exercisers and 71.3% of non-exercisers reported zero poor mental health days. Among females, the corresponding proportions were 66.7% and 62.1%. Female non-exercisers had the highest mean number of poor mental health days (5.2 days).
+
+**Multiple Linear Regression**
+
+A multiple linear regression was conducted to examine the associations of exercise status and sex with poor mental health days (N = 450,071). HC3 heteroskedasticity-robust standard errors were used for statistical inference.
+
+<p align="left">
+  <img src="figures/rq2_coef_plot.png" width="550">
+</p>
+
+| Predictor | β | Robust SE | p-value |
+|---|---:|---:|---:|
+| Exercise (Yes vs. No) | -1.878 | 0.029 | < 0.001 |
+| Sex (Female vs. Male) | 0.959 | 0.023 | < 0.001 |
+
+*R² = 0.0162.*
+
+After accounting for sex, respondents reporting recent exercise had, on average, 1.88 fewer poor mental health days than non-exercisers. After accounting for exercise status, female respondents reported approximately 0.96 more poor mental health days than male respondents.
+
+Although both associations were statistically significant, the model explained only 1.62% of the variance. These findings are exploratory and do not establish causality. The analysis did not adjust for additional potential confounders or the complex BRFSS sampling design.
 
 ### RQ3: Income, health-care coverage, and self-reported health
 
