@@ -59,11 +59,29 @@ Although both associations were statistically significant, the model explained o
 
 How does self-reported general health differ across household income categories among adults with and without health-care coverage?
 
+**Descriptive Analysis**
+
 ![RQ3: Self-reported health by income and health-care coverage](figures/rq3_income_insurance_health.png)
 
 Self-reported health showed a clear income gradient within both health-care coverage groups. Among respondents with coverage, the proportion reporting Excellent or Very good health increased from 30.1% in the lowest income group to 70.5% in the highest income group. Among respondents without coverage, the same proportion increased from 33.5% to 63.9%.
 
 The relationship between health-care coverage and self-reported health was not consistent within income groups. This should not be interpreted causally, as age, employment, existing health conditions, and other unmeasured factors may influence both health-care coverage and self-reported health.
+
+**Ordinal Logistic Regression**
+
+#### Ordinal Logistic Regression
+
+An ordinal logistic regression was conducted to examine the associations of household income and health-care coverage with self-reported general health (N = 418,036).
+
+| Predictor | Odds Ratio (OR) | 95% CI |
+|---|---:|---:|
+| Income: $25,000–$74,999 vs. <$25,000 | 2.770 | [2.732, 2.808] |
+| Income: ≥$75,000 vs. <$25,000 | 5.723 | [5.634, 5.814] |
+| Health-care coverage: Yes vs. No | 0.873 | [0.858, 0.889] |
+
+Higher household income was associated with better self-reported health. After accounting for income group, health-care coverage was associated with slightly lower odds of reporting better health.
+
+These exploratory findings do not establish causality; the proportional odds assumption and complex survey design were not assessed.
 
 ## Methods
 
@@ -72,6 +90,9 @@ The analysis includes:
 - Data screening and complete-case analysis for each research question
 - Removal of invalid values, such as `menthlth = 5000` for a variable defined as the number of poor mental health days in the past 30 days
 - Descriptive statistics including sample size, proportions, means, medians, and interquartile ranges
-- Grouped comparisons using `group_by()` and `summarise()`
-- Proportional stacked bar charts and faceted visualizations
-- Interpretation of generalizability, bias, confounding, and causal limitations
+- Grouped comparisons and data visualization using dplyr and ggplot2
+- Multiple linear regression with HC3 heteroskedasticity-robust standard errors (RQ2)
+- Ordinal logistic regression with odds ratios and 95% confidence intervals (RQ3)
+- Interpretation of statistical associations, model limitations, confounding, and generalizability
+
+All analyses were exploratory and unweighted. The regression models did not account for the complex BRFSS sampling design or additional potential confounders. The proportional odds assumption for RQ3 was not assessed; findings should not be interpreted causally.
