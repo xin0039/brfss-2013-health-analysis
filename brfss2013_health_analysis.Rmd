@@ -367,6 +367,40 @@ ggplot(
   ) +
   theme(axis.text.x = element_text(angle = 20, hjust = 1))
 
+### Ordinal Logistic Regression
+
+```{r rq3-ordinal-regression}
+library(MASS)
+
+rq3_data$health <- ordered(
+  rq3_data$health,
+  levels = c("Poor", "Fair", "Good", "Very good", "Excellent")
+)
+
+rq3_data$insurance <- relevel(
+  rq3_data$insurance,
+  ref = "No"
+)
+rq3_model <- polr(
+  health ~ income_group + insurance,
+  data = rq3_data,
+  Hess = TRUE,
+  method = "logistic"
+)
+
+est <- coef(rq3_model)
+se <- sqrt(diag(vcov(rq3_model)))[names(est)]
+
+rq3_results <- data.frame(
+  Predictor = names(est),
+  OR = round(exp(est), 3),
+  Lower_95CI = round(exp(est - 1.96 * se), 3),
+  Upper_95CI = round(exp(est + 1.96 * se), 3)
+)
+
+print(rq3_results)
+```
+
 ```
 Self-reported general health showed a clear income gradient within both health-care coverage groups. Among respondents with coverage, the proportion reporting Excellent or Very good health increased from 30.1% in the lowest income group to 70.5% in the highest income group, while the Fair or Poor proportion decreased from 37.4% to 5.9%. A similar pattern appeared among respondents without coverage: Excellent or Very good health increased from 33.5% to 63.9%, and Fair or Poor health decreased from 30.1% to 8.3% across the same income groups.
 
