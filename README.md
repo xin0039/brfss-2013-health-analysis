@@ -69,8 +69,6 @@ The relationship between health-care coverage and self-reported health was not c
 
 **Ordinal Logistic Regression**
 
-#### Ordinal Logistic Regression
-
 An ordinal logistic regression was conducted to examine the associations of household income and health-care coverage with self-reported general health (N = 418,036).
 
 | Predictor | Odds Ratio (OR) | 95% CI |
