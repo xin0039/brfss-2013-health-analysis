@@ -136,7 +136,7 @@ mental_health_exercise <- brfss2013 %>%
     menthlth <= 30
   ) %>%
   mutate(
-    exercise = factor(exerany2, levels = c("Yes", "No")),
+    exercise = factor(exerany2, levels = c("No", "Yes")),
     sex = factor(sex, levels = c("Male", "Female"))
   ) %>%
   select(menthlth, exercise, sex)
